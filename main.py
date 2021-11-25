@@ -62,16 +62,46 @@ def isonboard (x,y):
     else:
         return False
 
-#def validlocation(turn, posx, posy):
-#    valid = False
-#    oposturn = 3-turn
-#    possibilities = []
-#    if board[]
-#    for i in range (-1,2):
-#        for j in range (-1,2):
-#            if i=0 and j=0:
-#                continue
-#            if isonboard(posx+i, posy+j):
+def validlocation(turn, posx, posy):
+    valid = False
+    oposturn = 3-turn
+    flip = []
+    if board[posx][posy] != 0:
+        return False
+    for j in range (-1,2):
+        for i in range (-1,2):
+            if i==0 and j==0:
+                continue
+            x = posx+i
+            y = posy+j
+            if isonboard(x, y):
+                if board[x][y] == oposturn:
+                    x += i
+                    y += j
+                    while board[x][y] == oposturn:
+                        x += i
+                        y += j
+                        if not isonboard(x,y):
+                            break
+                    if not isonboard(x,y):
+                        continue
+                    if board[x][y] == turn:
+                        valid = True
+                        while True:
+                            x -= i
+                            y -= j
+                            if x == posx and y == posy:
+                                break
+                            flip.append([x,y])
+    if valid:
+        return flip
+    else:
+        return valid
+
+
+
+
+
 
 
 
@@ -91,7 +121,7 @@ while running:
     p1,p2 = 0,0
     for j in range(8):
         for i in range(8):
-            displayer(board[i][j], lrborder+j*60, udborder+i*60)
+            displayer(board[i][j], lrborder+i*60, udborder+j*60)
             if board[i][j] == 1:
                 p1 += 1
             elif board[i][j] == 2:
@@ -103,7 +133,8 @@ while running:
         if event.type == 1025:
             xx, yy = getpos()
             if isonboard(xx,yy):
-                board[yy][xx] = 2
+                if validlocation(turn,xx,yy) != False:
+                    board[xx][yy] = turn
 #                if validlocation(turn,xx,yy):
 #                    marklocation(xx, yy)
 #                    changeturn()
@@ -122,8 +153,8 @@ while running:
 #    displayer(2,700,300)
 
     xx, yy = getpos()
-    if xx >= 0 and xx <= 7 and yy >= 0 and yy <= 7:
-        displayer(2, lrborder + xx * 60, udborder + yy * 60)
+    if isonboard(xx,yy):
+        displayer(turn, lrborder + xx * 60, udborder + yy * 60)
 
 #    print(xx,yy)
     pg.display.update()
