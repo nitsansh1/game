@@ -62,7 +62,7 @@ def validlocation():
     for i in range (-1,2):
         for j in range (-1,2):
             if xx+i<8 and xx+i>-1 and yy+j<8 and yy-j>-1 and (i !=0 or j!=0):
-                
+
 
 
 # Game loop
