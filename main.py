@@ -10,9 +10,9 @@ udborder = ((SCREENY-(60*8))//2)
 pg.init()
 
 board = []  # initially output matrix is empty
-for i in range(8):  # iterate to the end of rows
+for j in range(8):  # iterate to the end of rows
     row = []
-    for j in range(8):  # j iterate to the end of column
+    for i in range(8):  # j iterate to the end of column
         row.append(0)  # add the user element to the end of the row
     board.append(row)  # append the row to the output matrix
 
@@ -56,12 +56,23 @@ def getpos():
     yy = (y-udborder)//60
     return xx, yy
 
-def validlocation():
-    valid = False
-    possibilities = []
-    for i in range (-1,2):
-        for j in range (-1,2):
-            if xx+i<8 and xx+i>-1 and yy+j<8 and yy-j>-1 and (i !=0 or j!=0):
+def isonboard (x,y):
+    if x >= 0 and x <= 7 and y >= 0 and y <= 7:
+        return True
+    else:
+        return False
+
+#def validlocation(turn, posx, posy):
+#    valid = False
+#    oposturn = 3-turn
+#    possibilities = []
+#    if board[]
+#    for i in range (-1,2):
+#        for j in range (-1,2):
+#            if i=0 and j=0:
+#                continue
+#            if isonboard(posx+i, posy+j):
+
 
 
 
@@ -78,8 +89,8 @@ while running:
         screen.blit(text, textpos)
 
     p1,p2 = 0,0
-    for i in range(8):
-        for j in range(8):
+    for j in range(8):
+        for i in range(8):
             displayer(board[i][j], lrborder+j*60, udborder+i*60)
             if board[i][j] == 1:
                 p1 += 1
@@ -91,11 +102,11 @@ while running:
 #        print(event.type)
         if event.type == 1025:
             xx, yy = getpos()
-            if xx >= 0 and xx <= 7 and yy >= 0 and yy <= 7:
-#                board[yy][xx] = 2
-                if validlocation(turn,xx,yy):
-                    marklocation(xx, yy)
-                    changeturn()
+            if isonboard(xx,yy):
+                board[yy][xx] = 2
+#                if validlocation(turn,xx,yy):
+#                    marklocation(xx, yy)
+#                    changeturn()
     if pg.font:
         font = pg.font.Font(None, 64)
         text = font.render(str(p1), True, (255, 255, 255))
