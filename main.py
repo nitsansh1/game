@@ -1,13 +1,20 @@
 
 
 import pygame as pg
+import time
+from pygame import mixer
+
 
 SCREENX = 800
 SCREENY = 700
 lrborder = ((SCREENX-(60*8))//2)
 udborder = ((SCREENY-(60*8))//2)
+turn = 1
 
 pg.init()
+mixer.init()
+
+sound = mixer.Sound("images\\flip.mp3")
 
 board = []  # initially output matrix is empty
 for j in range(8):  # iterate to the end of rows
@@ -33,12 +40,12 @@ screen = pg.display.set_mode((SCREENX, SCREENY))
 
 # set Title and Logo
 pg.display.set_caption("Reversi")
-pg.display.set_icon(pg.image.load('go.png'))
+pg.display.set_icon(pg.image.load('images\go.png'))
 
 # players
-dplayerimg = pg.image.load("dark.png")
-lplayerimg = pg.image.load("light.png")
-emptyimg = pg.image.load("empty.png")
+dplayerimg = pg.image.load("images\dark.png")
+lplayerimg = pg.image.load("images\light.png")
+emptyimg = pg.image.load("images\empty.png")
 
 
 def displayer(player, x, y):
@@ -63,13 +70,19 @@ def isonboard (x,y):
         return False
 
 def validlocation(turn, posx, posy):
-    valid = False
+    """
+
+    :param turn:
+    :param posx:
+    :param posy:
+    :return:
+    """
     oposturn = 3-turn
-    flip = []
+    fliplst = []
     if board[posx][posy] != 0:
-        return False
-    for j in range (-1,2):
-        for i in range (-1,2):
+        return fliplst
+    for j in [-1,0,1]:
+        for i in [-1,0,1]:
             if i==0 and j==0:
                 continue
             x = posx+i
@@ -78,25 +91,50 @@ def validlocation(turn, posx, posy):
                 if board[x][y] == oposturn:
                     x += i
                     y += j
-                    while board[x][y] == oposturn:
-                        x += i
-                        y += j
-                        if not isonboard(x,y):
-                            break
-                    if not isonboard(x,y):
-                        continue
-                    if board[x][y] == turn:
-                        valid = True
-                        while True:
-                            x -= i
-                            y -= j
-                            if x == posx and y == posy:
+                    if isonboard(x,y):
+                        while board[x][y] == oposturn:
+                            x += i
+                            y += j
+                            if not isonboard(x,y):
                                 break
-                            flip.append([x,y])
-    if valid:
-        return flip
-    else:
-        return valid
+                        if not isonboard(x,y):
+                            continue
+                        if board[x][y] == turn:
+                            while True:
+                                x -= i
+                                y -= j
+                                if x == posx and y == posy:
+                                    break
+                                fliplst.append([x,y])
+    return fliplst
+
+
+
+def flip(fliplist, turn):
+    oposturn = 3-turn
+    for i,j in fliplist:
+        sound.play()
+        time.sleep(0.4)
+        board[i][j] = turn
+
+def possiblemove(turn):
+    possible = False
+    for j in range(8):
+        for i in range(8):
+            possible = possible or (validlocation(turn, i, j) != [])
+    return possible
+
+def changeturn():
+    global turn
+    turn = 3-turn
+    if not possiblemove(turn):
+        turn = 3-turn
+        if not possiblemove(turn):
+            print("game-over")
+            return False
+        else:
+            print ("moving turn - the user didn't have a valid move")
+    return True
 
 
 
@@ -107,7 +145,7 @@ def validlocation(turn, posx, posy):
 
 
 # Game loop
-turn = 1
+
 running = True
 while running:
     screen.fill((0, 128, 128))
@@ -133,8 +171,13 @@ while running:
         if event.type == 1025:
             xx, yy = getpos()
             if isonboard(xx,yy):
-                if validlocation(turn,xx,yy) != False:
+                flippingcells = validlocation(turn,xx,yy)
+                if flippingcells != []:
                     board[xx][yy] = turn
+                    flip(flippingcells, turn)
+                    changeturn()
+#                   turn = 3-turn
+#                   possiblemove(turn)
 #                if validlocation(turn,xx,yy):
 #                    marklocation(xx, yy)
 #                    changeturn()
@@ -154,7 +197,8 @@ while running:
 
     xx, yy = getpos()
     if isonboard(xx,yy):
-        displayer(turn, lrborder + xx * 60, udborder + yy * 60)
+        if validlocation(turn,xx,yy) != []:
+            displayer(turn, lrborder + xx * 60, udborder + yy * 60)
 
 #    print(xx,yy)
     pg.display.update()
