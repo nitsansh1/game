@@ -3,40 +3,126 @@
 import pygame as pg
 import time
 from pygame import mixer
+# Constants
+SCREEN_X = 800
+SCREEN_Y = 700
+LR_BORDER = ((SCREEN_X-(60*8))//2)
+UD_BORDER = ((SCREEN_Y-(60*8))//2)
 
-SCREENX = 800
-SCREENY = 700
+
+class GameBoard:
+    board = []  # initially output matrix is empty
+    turn = 1
+
+    def __init__(self):
+        for j in range(8):  # iterate to the end of rows
+            row = []
+            for i in range(8):  # j iterate to the end of column
+                row.append(0)  # add the user element to the end of the row
+            self.board.append(row)  # append the row to the output matrix
+
+        self.board[4-1][5-1] = 1
+        self.board[5-1][4-1] = 1
+        self.board[4-1][4-1] = 2
+        self.board[5-1][5-1] = 2
+
+    def isonboard(self, x, y):
+        """
+        Checks if x,y is on board (0-7,0-7)
+        :param x: X axis
+        :param y: Y axis
+        :return: True if on board, False if extended the board
+        """
+        if (x >= 0) and (x <= 7) and (y >= 0) and (y <= 7):
+            return True
+        else:
+            return False
+
+
+    def validlocation(self, posx, posy):
+        """
+
+        :param posx: X axis (0-7)
+        :param posy: Y axis (0-7)
+        :return: empty list if is not a valid location, or list of "enemy" nodes that will be flipped if the node will be places here
+        """
+        oposturn = 3 - self.turn
+        fliplst = []
+        if self.board[posx][posy] != 0:
+            return fliplst
+        for j in [-1, 0, 1]:
+            for i in [-1, 0, 1]:
+                if i == 0 and j == 0:
+                    continue
+                x = posx + i
+                y = posy + j
+                if self.isonboard(x, y):
+                    if self.board[x][y] == oposturn:
+                        x += i
+                        y += j
+                        if self.isonboard(x, y):
+                            while self.board[x][y] == oposturn:
+                                x += i
+                                y += j
+                                if not self.isonboard(x, y):
+                                    break
+                            if not self.isonboard(x, y):
+                                continue
+                            if self.board[x][y] == self.turn:
+                                while True:
+                                    x -= i
+                                    y -= j
+                                    if x == posx and y == posy:
+                                        break
+                                    fliplst.append([x, y])
+        return fliplst
+
+
+    def possiblemove(self):
+        """
+        Checks if the current player has an available location
+        :return: True if there is a possible location, False if there is no available location
+        """
+        possible = False
+        for j in range(8):
+            for i in range(8):
+                possible = possible or (self.validlocation(i, j) != [])
+        return possible
+
+
+    def changeturn(self):
+        """
+        Change the current playing player, and checks if he has possible location,
+            If not - the current player will be changed - If both will not have available location - the game will end.
+        :return: False if the game is over , True otherwise.
+        """
+        self.turn = 3-self.turn
+        if not self.possiblemove():
+            self.turn = 3-self.turn
+            if not self.possiblemove():
+                return False #  "game-over"
+        return True  #   "moving turn - the user didn't have a valid move"
+
+#game initialization
 cont = True
-lrborder = ((SCREENX-(60*8))//2)
-udborder = ((SCREENY-(60*8))//2)
-turn = 1
 pg.init()
 mixer.init()
 sound = mixer.Sound("images\\flip.mp3")
-board = []  # initially output matrix is empty
-for j in range(8):  # iterate to the end of rows
-    row = []
-    for i in range(8):  # j iterate to the end of column
-        row.append(0)  # add the user element to the end of the row
-    board.append(row)  # append the row to the output matrix
+game = GameBoard()
 
-board[4-1][5-1] = 1
-board[5-1][4-1] = 1
-board[4-1][4-1] = 2
-board[5-1][5-1] = 2
 
 # set screen
-screen = pg.display.set_mode((SCREENX, SCREENY))
+screen = pg.display.set_mode((SCREEN_X, SCREEN_Y))
 
 
 # set Title and Logo
 pg.display.set_caption("Reversi")
-pg.display.set_icon(pg.image.load('images\go.png'))
+pg.display.set_icon(pg.image.load('images\\go.png'))
 
-# players
-dplayerimg = pg.image.load("images\dark.png")
-lplayerimg = pg.image.load("images\light.png")
-emptyimg = pg.image.load("images\empty.png")
+# players images
+dplayerimg = pg.image.load("images\\dark.png")
+lplayerimg = pg.image.load("images\\light.png")
+emptyimg = pg.image.load("images\\empty.png")
 
 
 def displayer(player, x, y):
@@ -61,60 +147,12 @@ def getpos():
     :return: XX and YY - places on the boards (0-7,0-7)
     """
     x, y = pg.mouse.get_pos()
-    xx = (x-lrborder)//60
-    yy = (y-udborder)//60
+    xx = (x-LR_BORDER)//60
+    yy = (y-UD_BORDER)//60
     return xx, yy
 
-def isonboard (x,y):
-    """
-    Checks if x,y is on board (0-7,0-7)
-    :param x: X axis
-    :param y: Y axis
-    :return: True if on board, False if extended the board
-    """
-    if x >= 0 and x <= 7 and y >= 0 and y <= 7:
-        return True
-    else:
-        return False
 
-def validlocation(turn, posx, posy):
-    """
 
-    :param turn: the player (color) that tries to place the node
-    :param posx: X axis (0-7)
-    :param posy: Y axis (0-7)
-    :return: empty list if is not a valid location, or list of "enemy" nodes that will be flipped if the node will be places here
-    """
-    oposturn = 3-turn
-    fliplst = []
-    if board[posx][posy] != 0:
-        return fliplst
-    for j in [-1,0,1]:
-        for i in [-1,0,1]:
-            if i==0 and j==0:
-                continue
-            x = posx+i
-            y = posy+j
-            if isonboard(x, y):
-                if board[x][y] == oposturn:
-                    x += i
-                    y += j
-                    if isonboard(x,y):
-                        while board[x][y] == oposturn:
-                            x += i
-                            y += j
-                            if not isonboard(x,y):
-                                break
-                        if not isonboard(x,y):
-                            continue
-                        if board[x][y] == turn:
-                            while True:
-                                x -= i
-                                y -= j
-                                if x == posx and y == posy:
-                                    break
-                                fliplst.append([x,y])
-    return fliplst
 
 
 
@@ -129,47 +167,29 @@ def flip(fliplist, turn):
     for i,j in fliplist:
         sound.play()
         time.sleep(0.4)
-        board[i][j] = turn
+        game.board[i][j] = turn
 
-def possiblemove(turn):
-    """
-    Checks if the current player has an available location
-    :param turn: The current player
-    :return: True if there is a possible location, False if there is no available location
-    """
-    possible = False
-    for j in range(8):
-        for i in range(8):
-            possible = possible or (validlocation(turn, i, j) != [])
-    return possible
 
-def changeturn():
-    """
-    Change the current playing player, and checks if he has possible location,
-        If not - the current player will be changed - If both will not have available location - the game will end.
-    :return: False if the game is over , True otherwise.
-    """
-    global turn
-    turn = 3-turn
-    if not possiblemove(turn):
-        turn = 3-turn
-        if not possiblemove(turn):
-            print("game-over")
-            return False
-        else:
-            print ("moving turn - the user didn't have a valid move")
-    return True
+
+def write(txt, x, y):
+    if pg.font:
+        font = pg.font.Font(None, 64)
+        text = font.render(txt, True, (255, 255, 255))
+        textpos = text.get_rect(centerx=x, centery=y)
+        screen.blit(text, textpos)
+        pg.display.update()
+
 
 def gameover():
     if pg.font:
         font = pg.font.Font(None, 64)
         text = font.render("WON !!!", True, (255, 255, 255))
-        textpos = text.get_rect(centerx=SCREENX /2, centery=SCREENY - 50)
+        textpos = text.get_rect(centerx=SCREEN_X /2, centery=SCREEN_Y - 50)
         if p2>p1:
-            screen.blit(lplayerimg, (SCREENX /2 - 180, SCREENY-80))
+            screen.blit(lplayerimg, (SCREEN_X /2 - 180, SCREEN_Y-80))
             screen.blit(text, textpos)
         elif p1>p2:
-            screen.blit(dplayerimg, ((SCREENX/2 - 180), (SCREENY - 80)))
+            screen.blit(dplayerimg, ((SCREEN_X/2 - 180), (SCREEN_Y - 80)))
             screen.blit(text, textpos)
         else:
             text = font.render(" BOTH WON !!!", True, (255, 255, 255))
@@ -193,16 +213,16 @@ while running:
         font = pg.font.Font(None, 64)
         text = font.render("Reversi", True, (255, 255, 255))
 #        textpos = text.get_rect(centerx=background.get_width() / 2, y=10)
-        textpos = text.get_rect(centerx=SCREENX/2, y=10)
+        textpos = text.get_rect(centerx=SCREEN_X/2, y=10)
         screen.blit(text, textpos)
 
     p1,p2 = 0,0
     for j in range(8):
         for i in range(8):
-            displayer(board[i][j], lrborder+i*60, udborder+j*60)
-            if board[i][j] == 1:
+            displayer(game.board[i][j], LR_BORDER+i*60, UD_BORDER+j*60)
+            if game.board[i][j] == 1:
                 p1 += 1
-            elif board[i][j] == 2:
+            elif game.board[i][j] == 2:
                 p2 += 1
     if not cont:
         gameover()
@@ -213,36 +233,37 @@ while running:
 #        print(event.type)
         if event.type == 1025:
             xx, yy = getpos()
-            if isonboard(xx,yy):
-                flippingcells = validlocation(turn,xx,yy)
+            if game.isonboard(xx,yy):
+                flippingcells = game.validlocation(xx,yy)
                 if flippingcells != []:
-                    board[xx][yy] = turn
-                    flip(flippingcells, turn)
-                    cont = changeturn()
+                    game.board[xx][yy] = game.turn
+                    flip(flippingcells, game.turn)
+                    cont = game.changeturn()
 
-#                   turn = 3-turn
-#                   possiblemove(turn)
-#                if validlocation(turn,xx,yy):
+#                   game.turn = 3-game.turn
+#                   possiblemove(game.turn)
+#                if validlocation(game.turn,xx,yy):
 #                    marklocation(xx, yy)
 #                    changeturn()
     if pg.font:
         font = pg.font.Font(None, 64)
         text = font.render(str(p1), True, (255, 255, 255))
-        textpos = text.get_rect(centerx=60, centery=SCREENY / 2)
-        screen.blit(dplayerimg, (35, (SCREENY / 2)-90))
+        textpos = text.get_rect(centerx=60, centery=SCREEN_Y / 2)
+        screen.blit(dplayerimg, (35, (SCREEN_Y / 2)-90))
         screen.blit(text, textpos)
         text = font.render(str(p2), True, (255, 255, 255))
-        textpos = text.get_rect(centerx=SCREENX-60, centery=SCREENY / 2)
-        screen.blit(lplayerimg, ((SCREENX-85), (SCREENY / 2)-90))
+        textpos = text.get_rect(centerx=SCREEN_X-60, centery=SCREEN_Y / 2)
+        screen.blit(lplayerimg, ((SCREEN_X-85), (SCREEN_Y / 2)-90))
         screen.blit(text, textpos)
 
     #    displayer(1,100,300)
 #    displayer(2,700,300)
 
+
     xx, yy = getpos()
-    if isonboard(xx,yy):
-        if validlocation(turn,xx,yy) != []:
-            displayer(turn, lrborder + xx * 60, udborder + yy * 60)
+    if game.isonboard(xx,yy):
+        if game.validlocation(xx,yy) != []:
+            displayer(game.turn, LR_BORDER + xx * 60, UD_BORDER + yy * 60)
 
 #    print(xx,yy)
     pg.display.update()
