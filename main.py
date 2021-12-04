@@ -106,6 +106,7 @@ cont = True
 pg.init()
 mixer.init()
 sound = mixer.Sound("images\\flip.mp3")
+wowsound = mixer.Sound("images\\wow.mp3")
 game = GameBoard()
 
 
@@ -162,7 +163,8 @@ def flip(fliplist, turn):
         sound.play()
         time.sleep(0.4)
         game.board[i][j] = turn
-
+    if len(fliplist) > 5:
+        wowsound.play()
 
 def write(txt, x, y):
     if pg.font:
