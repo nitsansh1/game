@@ -106,7 +106,7 @@ cont = True
 pg.init()
 mixer.init()
 sound = mixer.Sound("images\\flip.mp3")
-wowsound = mixer.Sound("images\\wow.mp3")
+
 game = GameBoard()
 
 
@@ -163,8 +163,25 @@ def flip(fliplist, turn):
         sound.play()
         time.sleep(0.4)
         game.board[i][j] = turn
-    if len(fliplist) > 5:
+    if len(fliplist) > 14:
+        wowsound = mixer.Sound("images\\מגניב.mp3")
         wowsound.play()
+    elif len(fliplist) > 12:
+        wowsound = mixer.Sound("images\\טו-אוב.mp3")
+        wowsound.play()
+    elif len(fliplist) > 10:
+        wowsound = mixer.Sound("images\\מדהים.mp3")
+        wowsound.play()
+    elif len(fliplist) > 8:
+        wowsound = mixer.Sound("images\\וואו.mp3")
+        wowsound.play()
+    elif len(fliplist) > 6:
+        wowsound = mixer.Sound("images\\כל הכבוד.mp3")
+        wowsound.play()
+    elif len(fliplist) > 4:
+        wowsound = mixer.Sound("images\\יפה.mp3")
+        wowsound.play()
+
 
 def write(txt, x, y):
     if pg.font:
